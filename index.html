@@ -3002,9 +3002,218 @@ async function simpleSubmit(cadre) {
     }
   }
 }
+  // ==================== PERFORMANCE OPTIMIZATIONS ====================
+
+// 1. FASTER FILE PROCESSING
+function optimizeFileProcessing(file, maxSizeMB = 2) {
+  return new Promise((resolve, reject) => {
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      reject(new Error(`File too large: ${(file.size/1024/1024).toFixed(1)}MB`));
+      return;
+    }
+
+    // Skip compression for small files (faster)
+    if (file.size < 500 * 1024) { // Under 500KB
+      fileToBase64(file).then(resolve).catch(reject);
+      return;
+    }
+
+    // Fast compression for larger files
+    compressImage(file, 800, 800, 0.6).then(resolve).catch(reject);
+  });
+}
+
+// 2. BETTER LOADING FEEDBACK
+function showSubmissionProgress(stage) {
+  const spinner = document.getElementById('submitSpinner') || document.getElementById('officerSubmitSpinner');
+  const submitBtn = document.querySelector('.btn-success.btn-lg');
+  
+  const messages = {
+    processing: '🔄 Processing files...',
+    uploading: '📤 Uploading to database...',
+    finalizing: '✅ Finalizing submission...'
+  };
+  
+  if (submitBtn) {
+    submitBtn.innerHTML = `${messages[stage]} <span class="spinner"></span>`;
+  }
+  if (spinner) spinner.style.display = 'inline-block';
+}
+
+// 3. OPTIMIZED SUBMISSION FUNCTION (REPLACES YOUR EXISTING ONE)
+async function simpleSubmit(cadre) {
+  console.log("Starting optimized submission for:", cadre);
+  
+  const form = cadre === 'airmen' ? document.getElementById('multiStepForm') : document.getElementById('officerMultiStepForm');
+  const spinner = cadre === 'airmen' ? document.getElementById('submitSpinner') : document.getElementById('officerSubmitSpinner');
+  const submitBtn = document.querySelector('.btn-success.btn-lg');
+  
+  // Disable button to prevent double submission
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '🔄 Processing... <span class="spinner"></span>';
+  }
+  if (spinner) spinner.style.display = 'inline-block';
+  
+  try {
+    // Create data object
+    const data = {};
+    const formElements = form.elements;
+    
+    // Stage 1: Process form data (fast)
+    showSubmissionProgress('processing');
+    for (let element of formElements) {
+      if (element.name && element.type !== 'file') {
+        if (element.type === 'checkbox' || element.type === 'radio') {
+          if (element.checked) {
+            data[element.name] = element.value;
+          }
+        } else {
+          data[element.name] = element.value;
+        }
+      }
+    }
+    
+    // Stage 2: Process files (show progress)
+    showSubmissionProgress('uploading');
+    
+    // PARALLEL file processing for better performance
+    const filePromises = [];
+    
+    if (cadre === 'airmen') {
+      // Service ID Card
+      const fileInput = document.getElementById('fileUpload');
+      if (fileInput.files.length > 0) {
+        filePromises.push(
+          optimizeFileProcessing(fileInput.files[0], 5)
+            .then(base64 => {
+              data.svc_id_card = base64;
+              data.svc_id_card_name = fileInput.files[0].name;
+            })
+        );
+      }
+      
+      // Authority Letter
+      const authorityLetterInput = document.getElementById('authorityLetterUpload');
+      if (authorityLetterInput.files.length > 0) {
+        filePromises.push(
+          optimizeFileProcessing(authorityLetterInput.files[0], 5)
+            .then(base64 => {
+              data.authority_letter = base64;
+              data.authority_letter_name = authorityLetterInput.files[0].name;
+            })
+        );
+      }
+      
+      // Dependant Photos (process in batches)
+      const airmenDepPhotosInput = document.getElementById('airmenDependantPhotos');
+      if (airmenDepPhotosInput && airmenDepPhotosInput.files.length > 0) {
+        data.dependant_photos = [];
+        data.dependant_photo_names = [];
+        
+        // Process max 6 photos to avoid overload
+        const photos = Array.from(airmenDepPhotosInput.files).slice(0, 6);
+        const photoPromises = photos.map((file, index) => 
+          optimizeFileProcessing(file, 3)
+            .then(base64 => {
+              data.dependant_photos[index] = base64;
+              data.dependant_photo_names[index] = file.name;
+            })
+        );
+        filePromises.push(Promise.all(photoPromises));
+      }
+    } else {
+      // Officer file processing
+      const officerFileInput = document.getElementById('officerFileUpload');
+      if (officerFileInput && officerFileInput.files.length > 0) {
+        filePromises.push(
+          optimizeFileProcessing(officerFileInput.files[0], 5)
+            .then(base64 => {
+              data.svc_id_card = base64;
+              data.svc_id_card_name = officerFileInput.files[0].name;
+            })
+        );
+      }
+      
+      // Officer Allocation Letter
+      const allocationFile = document.querySelector('#officerMultiStepForm input[name="allocation_letter"]');
+      if (allocationFile && allocationFile.files.length > 0) {
+        filePromises.push(
+          optimizeFileProcessing(allocationFile.files[0], 5)
+            .then(base64 => {
+              data.allocation_letter = base64;
+              data.allocation_letter_name = allocationFile.files[0].name;
+            })
+        );
+      }
+      
+      // Officer Dependant Photos
+      const photoFile = document.querySelector('#officerMultiStepForm input[name="dependant_photos"]');
+      if (photoFile && photoFile.files.length > 0) {
+        data.dependant_photos = [];
+        data.dependant_photo_names = [];
+        
+        const photos = Array.from(photoFile.files).slice(0, 6);
+        const photoPromises = photos.map((file, index) => 
+          optimizeFileProcessing(file, 3)
+            .then(base64 => {
+              data.dependant_photos[index] = base64;
+              data.dependant_photo_names[index] = file.name;
+            })
+        );
+        filePromises.push(Promise.all(photoPromises));
+      }
+    }
+    
+    // Wait for all files to process
+    await Promise.all(filePromises);
+    
+    // Stage 3: Submit to Firebase
+    showSubmissionProgress('finalizing');
+    
+    const result = await submitToFirestore(data, cadre);
+    
+    if (result.success) {
+      // Success - show confirmation
+      if (submitBtn) submitBtn.innerHTML = '✅ Submitted!';
+      setTimeout(() => {
+        document.getElementById('successModal').style.display = 'flex';
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Submit Form <span class="spinner"></span>';
+        }
+        if (spinner) spinner.style.display = 'none';
+      }, 1000);
+      
+      submittedFormData = data;
+    } else {
+      throw new Error(result.error);
+    }
+    
+  } catch (error) {
+    console.error('Submission error:', error);
+    
+    // Reset button state
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Submit Form <span class="spinner"></span>';
+    }
+    if (spinner) spinner.style.display = 'none';
+    
+    // Show error
+    if (error.message.includes('File too large')) {
+      alert('📁 File Upload Error:\n\n' + error.message + '\n\nPlease choose smaller files.');
+    } else if (error.message.includes('already registered')) {
+      alert('⚠️ Duplicate Entry:\n\n' + error.message);
+    } else {
+      alert('Submission failed: ' + error.message);
+    }
+  }
+}
 </script>
 </body>
 
 </html>
+
 
 
