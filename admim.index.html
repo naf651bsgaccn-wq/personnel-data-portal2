@@ -162,50 +162,154 @@
     </div>
 
     <script>
-        function login() {
-            const password = document.getElementById('adminPassword').value;
-            const errorElement = document.getElementById('errorMessage');
-            
-            // 🔑 CHANGE THIS PASSWORD to your secure password!
-            if (password === '651BSGaccn') { 
-                // Redirect to main form with admin access
-                window.location.href = 'index.html?admin=true';
-            } else {
-                errorElement.style.display = 'block';
-                // Clear password field
-                document.getElementById('adminPassword').value = '';
-                // Shake animation for error
-                document.getElementById('adminPassword').style.animation = 'shake 0.5s';
-                setTimeout(() => {
-                    document.getElementById('adminPassword').style.animation = '';
-                }, 500);
-            }
-        }
+       // ==================== ADMIN DASHBOARD FUNCTIONS ====================
 
-        function goBack() {
-            window.location.href = 'index.html';
-        }
+let allPersonnelData = [];
+let currentFilter = 'all';
 
-        // Allow pressing Enter to login
-        document.getElementById('adminPassword').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                login();
-            }
-        });
+function showAdminDashboard() {
+  document.getElementById('adminModal').style.display = 'block';
+  loadAllData();
+}
 
-        // Add shake animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                25% { transform: translateX(-5px); }
-                75% { transform: translateX(5px); }
-            }
-        `;
-        document.head.appendChild(style);
+function closeAdminDashboard() {
+  document.getElementById('adminModal').style.display = 'none';
+}
 
-        // Focus on password field when page loads
-        document.getElementById('adminPassword').focus();
+async function loadAllData() {
+  try {
+    console.log("Loading data from Firebase...");
+    document.getElementById('adminData').innerHTML = '<p style="text-align: center; color: #6b7280; font-size: 1.1rem;">🔄 Loading data from Firebase...</p>';
+    
+    const snapshot = await db.collection('personnel').orderBy('timestamp', 'desc').get();
+    allPersonnelData = [];
+    
+    console.log("Firebase returned", snapshot.size, "documents");
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      allPersonnelData.push({
+        id: doc.id,
+        ...data
+      });
+    });
+    
+    console.log("Processed", allPersonnelData.length, "records");
+    updateDashboard();
+    
+  } catch (error) {
+    console.error('Error loading data:', error);
+    document.getElementById('adminData').innerHTML = `
+      <div style="background: #fee2e2; color: #dc2626; padding: 1rem; border-radius: 8px; text-align: center;">
+        <strong>❌ Error loading data:</strong><br>
+        ${error.message}<br><br>
+        <button onclick="loadAllData()" style="background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+          Retry Loading
+        </button>
+      </div>
+    `;
+  }
+}
+
+function filterByCadre(cadre) {
+  currentFilter = cadre;
+  updateDashboard();
+}
+
+function updateDashboard() {
+  const filteredData = currentFilter === 'all' 
+    ? allPersonnelData 
+    : allPersonnelData.filter(item => item.cadre === currentFilter);
+  
+  // Update statistics
+  const total = allPersonnelData.length;
+  const airmen = allPersonnelData.filter(item => item.cadre === 'airmen').length;
+  const officers = allPersonnelData.filter(item => item.cadre === 'officer').length;
+  
+  document.getElementById('stats').innerHTML = `
+    <strong style="font-size: 1.2rem;">📊 LIVE STATISTICS:</strong><br>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+      <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; text-align: center;">
+        <div style="font-size: 2rem; font-weight: bold;">${total}</div>
+        <div>Total Records</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; text-align: center;">
+        <div style="font-size: 2rem; font-weight: bold;">${airmen}</div>
+        <div>Airmen</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; text-align: center;">
+        <div style="font-size: 2rem; font-weight: bold;">${officers}</div>
+        <div>Officers</div>
+      </div>
+    </div>
+  `;
+  
+  // Display data
+  if (filteredData.length === 0) {
+    document.getElementById('adminData').innerHTML = '<p style="text-align: center; color: #6b7280; font-size: 1.1rem;">No data found for the selected filter.</p>';
+    return;
+  }
+  
+  let html = `
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+  `;
+  
+  filteredData.forEach((person, index) => {
+    // Format timestamp safely
+    let submissionDate = 'Unknown';
+    try {
+      if (person.timestamp && person.timestamp.toDate) {
+        submissionDate = new Date(person.timestamp.toDate()).toLocaleDateString();
+      } else if (person.submission_date) {
+        submissionDate = new Date(person.submission_date).toLocaleDateString();
+      }
+    } catch (e) {
+      console.log("Date error:", e);
+    }
+    
+    html += `
+      <div style="border: 2px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid #f3f4f6;">
+          <strong style="color: ${person.cadre === 'airmen' ? '#0066cc' : '#004d99'}; font-size: 1.1rem; background: ${person.cadre === 'airmen' ? '#e6f3ff' : '#e6f0ff'}; padding: 4px 12px; border-radius: 20px;">${person.cadre ? person.cadre.toUpperCase() : 'UNKNOWN'}</strong>
+          <small style="color: #6b7280; font-weight: 600;">${submissionDate}</small>
+        </div>
+        <div style="display: grid; gap: 0.5rem;">
+          <div><strong style="color: var(--navy-dark);">Service No:</strong> <span style="color: #374151; font-weight: 600;">${person.svc_no || 'N/A'}</span></div>
+          <div><strong style="color: var(--navy-dark);">Rank:</strong> <span style="color: #374151; font-weight: 600;">${person.rank || 'N/A'}</span></div>
+          <div><strong style="color: var(--navy-dark);">Name:</strong> <span style="color: #374151; font-weight: 600;">${person.fullname || person.name || 'N/A'}</span></div>
+          <div><strong style="color: var(--navy-dark);">Unit:</strong> <span style="color: #374151; font-weight: 600;">${person.present_unit || 'N/A'}</span></div>
+          <div><strong style="color: var(--navy-dark);">Phone:</strong> <span style="color: #374151; font-weight: 600;">${person.phone || 'N/A'}</span></div>
+        </div>
+        
+        <!-- File indicators -->
+        <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
+          <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 0.5rem; font-weight: 600;">Attachments:</div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            ${person.svc_id_card ? `<span style="background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">📷 ID Card</span>` : ''}
+            ${person.authority_letter ? `<span style="background: #3b82f6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">📄 Authority</span>` : ''}
+            ${person.allocation_letter ? `<span style="background: #8b5cf6; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">📋 Allocation</span>` : ''}
+            ${person.dependant_photos && person.dependant_photos.length > 0 ? `<span style="background: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600;">🖼️ Photos (${person.dependant_photos.length})</span>` : ''}
+          </div>
+        </div>
+        
+        <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+          <button onclick="viewDetails('${person.id}')" style="background: var(--navy-dark); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">
+            👁️ View Details
+          </button>
+          <button onclick="deleteRecord('${person.id}')" style="background: var(--danger); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">
+            🗑️ Delete
+          </button>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  document.getElementById('adminData').innerHTML = html;
+}
+
+// ... keep your existing downloadFile, exportToCSV, viewDetails, deleteRecord functions
     </script>
 </body>
+
 </html>
