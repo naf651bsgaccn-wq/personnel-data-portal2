@@ -1,0 +1,2295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Personnel Data Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+
+<style>
+:root {
+  --navy-dark: #001f3f;
+  --navy-medium: #003366;
+  --navy-light: #004d99;
+  --accent-gold: #d4af37;
+  --success: #10b981;
+  --danger: #ef4444;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #0a1628 0%, #001f3f 50%, #003366 100%);
+  color: #fff;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.welcome-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(0, 31, 63, 0.97), rgba(0, 51, 102, 0.97));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.welcome-content {
+  background: white;
+  padding: 3rem;
+  border-radius: 20px;
+  max-width: 600px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+
+.welcome-content img {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  margin: 0 auto 1.5rem;
+}
+
+.welcome-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  margin-bottom: 1rem;
+}
+
+.welcome-subtitle {
+  font-size: 1.25rem;
+  color: var(--navy-medium);
+  margin-bottom: 1.5rem;
+}
+
+.welcome-instructions {
+  background: #f9fafb;
+  border-left: 4px solid var(--accent-gold);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.welcome-instructions h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  margin-bottom: 1rem;
+}
+
+.welcome-instructions ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #374151;
+  line-height: 1.8;
+}
+
+.btn-start {
+  background: linear-gradient(135deg, var(--navy-dark), var(--navy-medium));
+  color: white;
+  padding: 1rem 3rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-start:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 31, 63, 0.4);
+}
+
+.cadre-buttons {
+  display: flex;
+  gap: 1.5rem;
+  margin: 2rem 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.btn-cadre {
+  background: linear-gradient(135deg, #ffffff, #f9fafb);
+  border: 3px solid var(--navy-medium);
+  padding: 2rem 2.5rem;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  flex: 1;
+  min-width: 240px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-cadre:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 35px rgba(0, 51, 102, 0.3);
+  border-color: var(--accent-gold);
+  background: linear-gradient(135deg, #ffffff, #ffffff);
+}
+
+.cadre-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.cadre-icon img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin: 0 auto;
+  display: block;
+}
+
+.cadre-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  margin-bottom: 0.5rem;
+  word-wrap: break-word;
+}
+
+.cadre-description {
+  font-size: 0.9rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.btn-back-welcome {
+  background: white;
+  color: var(--navy-dark);
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 2px solid #d1d5db;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.btn-back-welcome:hover {
+  background: #f3f4f6;
+  transform: translateY(-2px);
+}
+
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: linear-gradient(135deg, var(--navy-dark), var(--navy-medium));
+  padding: 1.5rem 0;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  border-bottom: 2px solid var(--accent-gold);
+}
+
+.sticky-header img {
+  height: 180px;
+  width: 180px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 0.75rem;
+}
+
+.sticky-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+}
+
+.sticky-header h2 {
+  font-size: 0.95rem;
+  font-weight: 400;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.steps-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 0 1rem;
+  background: white;
+  margin: 0 -1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  flex: 1;
+  max-width: 140px;
+  cursor: pointer;
+}
+
+.step-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+  transition: all 0.3s ease;
+  z-index: 2;
+}
+
+.step-item.active .step-circle {
+  background: linear-gradient(135deg, var(--navy-dark), var(--navy-medium));
+  color: white;
+  transform: scale(1.1);
+}
+
+.step-item.completed .step-circle {
+  background: var(--success);
+  color: white;
+}
+
+.step-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: center;
+}
+
+.step-item.active .step-label {
+  color: var(--navy-dark);
+}
+
+.step-connector {
+  position: absolute;
+  top: 25px;
+  left: 50%;
+  width: 100%;
+  height: 3px;
+  background: #e5e7eb;
+  z-index: 1;
+}
+
+.step-item.completed .step-connector {
+  background: var(--success);
+}
+
+.step-item:last-child .step-connector {
+  display: none;
+}
+
+.progress-container {
+  position: sticky;
+  top: 220px;
+  z-index: 999;
+  background: white;
+  padding: 1rem 1.5rem;
+  margin: 0 -1.5rem;
+}
+
+.progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.step-label-text {
+  font-weight: 600;
+  color: var(--navy-dark);
+  font-size: 0.95rem;
+}
+
+.progress {
+  height: 12px;
+  border-radius: 10px;
+  background: #e5e7eb;
+  flex: 1;
+}
+
+.progress-bar {
+  background: linear-gradient(90deg, var(--navy-dark), var(--navy-light));
+  transition: width 0.4s ease;
+  height: 100%;
+  border-radius: 10px;
+}
+
+.progress-percent {
+  font-weight: 700;
+  color: var(--navy-dark);
+  font-size: 0.95rem;
+}
+
+.main-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  margin-top: 2rem;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.form-section {
+  padding: 1.5rem 0;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 3px solid var(--accent-gold);
+}
+
+.section-subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 400;
+  margin-left: auto;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.form-control, .form-select {
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--navy-medium);
+  box-shadow: 0 0 0 4px rgba(0, 51, 102, 0.1);
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.btn {
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  border: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-navy {
+  background: linear-gradient(135deg, var(--navy-dark), var(--navy-medium));
+  color: white;
+}
+
+.btn-navy:hover {
+  transform: translateY(-2px);
+  color: white;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--success), #059669);
+  color: white;
+}
+
+.btn-success:hover {
+  transform: translateY(-2px);
+  color: white;
+}
+
+.btn-outline-secondary {
+  background: white;
+  color: #6b7280;
+  border: 2px solid #d1d5db;
+}
+
+.btn-outline-secondary:hover {
+  background: #f3f4f6;
+  transform: translateY(-2px);
+}
+
+.dynamic-item {
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.dynamic-item h6 {
+  font-weight: 700;
+  color: var(--navy-dark);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--accent-gold);
+}
+
+.alert-box {
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  display: none;
+  font-weight: 600;
+}
+
+.alert-danger {
+  background: #fee2e2;
+  border: 2px solid var(--danger);
+  color: #991b1b;
+}
+
+.autosave-indicator {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 50px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  display: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--success);
+  z-index: 1000;
+}
+
+.confirmation-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.confirmation-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.confirmation-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid var(--accent-gold);
+}
+
+.confirmation-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.confirmation-header-text h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  margin: 0 0 0.25rem 0;
+}
+
+.confirmation-header-text p {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.confirmation-summary {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-section {
+  margin-bottom: 1.5rem;
+}
+
+.summary-section:last-child {
+  margin-bottom: 0;
+}
+
+.summary-section h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  margin-bottom: 0.75rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.summary-item {
+  background: white;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.summary-value {
+  font-size: 0.95rem;
+  color: var(--navy-dark);
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.confirmation-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.btn-confirm-submit {
+  background: linear-gradient(135deg, var(--success), #059669);
+  color: white;
+  padding: 0.875rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-cancel {
+  background: white;
+  color: #6b7280;
+  padding: 0.875rem 2rem;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.success-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.success-content {
+  background: white;
+  padding: 3rem;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 500px;
+}
+
+.success-checkmark {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 1.5rem;
+}
+
+.checkmark-circle {
+  stroke: var(--success);
+  stroke-width: 3;
+  fill: none;
+  stroke-dasharray: 314;
+  stroke-dashoffset: 314;
+  animation: drawCircle 0.6s ease forwards;
+}
+
+@keyframes drawCircle {
+  to { stroke-dashoffset: 0; }
+}
+
+.checkmark-check {
+  stroke: var(--success);
+  stroke-width: 4;
+  fill: none;
+  stroke-dasharray: 70;
+  stroke-dashoffset: 70;
+  animation: drawCheck 0.4s ease forwards 0.6s;
+}
+
+@keyframes drawCheck {
+  to { stroke-dashoffset: 0; }
+}
+
+.success-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--navy-dark);
+  margin-bottom: 0.5rem;
+}
+
+.success-message {
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+}
+
+.receipt-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-download-pdf, .btn-print {
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-download-pdf {
+  background: linear-gradient(135deg, var(--navy-dark), var(--navy-medium));
+  color: white;
+}
+
+.btn-print {
+  background: white;
+  color: var(--navy-dark);
+  border: 2px solid var(--navy-dark);
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: none;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.declaration-box {
+  background: #f3f4f6;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  padding: 1rem;
+  font-size: 0.9rem;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.email-validation {
+  font-size: 0.875rem;
+  color: var(--success);
+  margin-top: 0.25rem;
+  display: none;
+}
+
+.text-danger { color: var(--danger) !important; }
+
+.service-number-validation {
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 600;
+  display: none;
+}
+
+.service-number-valid {
+  color: var(--success);
+}
+
+.service-number-invalid {
+  color: var(--danger);
+}
+
+@media (max-width: 768px) {
+  .sticky-header img { height: 120px; width: 120px; }
+  .summary-grid { grid-template-columns: 1fr; }
+  .confirmation-actions { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== ADMIN DASHBOARD BUTTON ==================== -->
+<button onclick="showAdminDashboard()" style="position: fixed; top: 20px; left: 20px; z-index: 10000; background: var(--accent-gold); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; display: none;">
+  🗂️ Admin Dashboard
+</button>
+
+<!-- ==================== IMPROVED ADMIN DASHBOARD MODAL ==================== -->
+<div class="admin-modal" id="adminModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 10000; padding: 20px; overflow-y: auto;">
+  <div style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); padding: 2rem; border-radius: 16px; max-width: 1400px; margin: 0 auto; box-shadow: 0 25px 50px rgba(0,0,0,0.5); border: 2px solid var(--accent-gold);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 3px solid var(--navy-dark);">
+      <h2 style="color: var(--navy-dark); margin: 0; font-size: 2rem; font-weight: 700;">📊 Personnel Data Dashboard</h2>
+      <button onclick="closeAdminDashboard()" style="background: var(--danger); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">Close</button>
+    </div>
+    
+    <!-- Controls Section -->
+    <div style="background: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e5e7eb;">
+      <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+        <button onclick="loadAllData()" style="background: linear-gradient(135deg, var(--navy-dark), var(--navy-medium)); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+          🔄 Refresh Data
+        </button>
+        <button onclick="exportToCSV()" style="background: linear-gradient(135deg, var(--success), #059669); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+          📥 Export to Excel
+        </button>
+      </div>
+      
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <button onclick="filterByCadre('all')" style="background: var(--navy-medium); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; border: 2px solid transparent;">
+          👥 All Personnel
+        </button>
+        <button onclick="filterByCadre('airmen')" style="background: #0066cc; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; border: 2px solid transparent;">
+          🛬 Airmen Only
+        </button>
+        <button onclick="filterByCadre('officer')" style="background: #004d99; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; border: 2px solid transparent;">
+          ⭐ Officers Only
+        </button>
+      </div>
+    </div>
+    
+    <!-- Statistics -->
+    <div id="stats" style="background: linear-gradient(135deg, var(--navy-dark), var(--navy-medium)); color: white; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+      <strong style="font-size: 1.2rem;">📊 LIVE STATISTICS:</strong> Loading...
+    </div>
+    
+    <!-- Data Display -->
+    <div id="adminData" style="background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; max-height: 70vh; overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+      <p style="text-align: center; color: #6b7280; font-size: 1.1rem;">Loading data...</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== YOUR EXISTING CONTENT ==================== -->
+<!-- WELCOME SCREEN -->
+<div class="welcome-screen" id="welcomeScreen">
+  <div class="welcome-content">
+    <img src="https://i.imgur.com/74e5Ijv.jpeg" alt="Unit Logo"/>
+    <h1 class="welcome-title">Welcome to Sam Enthnan AFB</h1>
+    <h2 class="welcome-subtitle">Personnel Data Portal</h2>
+    
+    <div class="welcome-instructions">
+      <h4>📋 Before You Begin:</h4>
+      <ul>
+        <li>Have your Service ID Card ready for upload</li>
+        <li>Ensure all personal information is accurate</li>
+        <li>Form auto-saves your progress</li>
+        <li>You can navigate freely between all steps</li>
+        <li>All required fields must be completed before submission</li>
+        <li><strong>For more clarification please contact 651BSG Accommodation Office</strong></li>
+      </ul>
+    </div>
+    
+    <button class="btn-start" onclick="showCadreSelection()">START REGISTRATION →</button>
+  </div>
+</div>
+
+<!-- CADRE SELECTION SCREEN -->
+<div class="welcome-screen" id="cadreSelectionScreen" style="display:none;">
+  <div class="welcome-content">
+    <img src="https://i.imgur.com/74e5Ijv.jpeg" alt="Unit Logo"/>
+    <h1 class="welcome-title">Choose Your Cadre</h1>
+    <h2 class="welcome-subtitle">Select your service category to continue</h2>
+    
+    <div class="cadre-buttons">
+      <button class="btn-cadre" onclick="selectCadre('officer')">
+        <div class="cadre-icon">
+          <img src="https://i.imgur.com/jnYWtqF.jpeg" alt="Officers">
+        </div>
+        <div class="cadre-title">OFFICERS</div>
+        <div class="cadre-description">For commissioned officers</div>
+      </button>
+      
+      <button class="btn-cadre" onclick="selectCadre('airmen')">
+        <div class="cadre-icon">
+          <img src="https://i.imgur.com/4jiYFKt.jpeg" alt="Airmen/Airwomen">
+        </div>
+        <div class="cadre-title">AIRMEN/AIRWOMEN</div>
+        <div class="cadre-description">For non-commissioned personnel</div>
+      </button>
+    </div>
+    
+    <button class="btn-back-welcome" onclick="backToWelcome()">← Back to Welcome</button>
+  </div>
+</div>
+
+<!-- AIRMEN/AIRWOMEN FORM CONTAINER -->
+<div class="container py-4" id="mainContainer" style="display:none;">
+  <header class="sticky-header text-center">
+    <img src="https://i.imgur.com/74e5Ijv.jpeg" alt="Unit Logo"/>
+    <h1>Sam Enthnan Air Force Base</h1>
+    <h2>Airmen/Airwomen Personnel Data Portal</h2>
+  </header>
+
+  <div class="main-card">
+    <div class="card-body">
+      <div class="steps-indicator">
+        <div class="step-item active">
+          <div class="step-circle">1</div>
+          <div class="step-label">Personnel</div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="step-item">
+          <div class="step-circle">2</div>
+          <div class="step-label">Accommodation</div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="step-item">
+          <div class="step-circle">3</div>
+          <div class="step-label">Dependants</div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="step-item">
+          <div class="step-circle">4</div>
+          <div class="step-label">Vehicles</div>
+        </div>
+      </div>
+
+      <div class="progress-container">
+        <div class="progress-wrapper">
+          <div class="step-label-text" id="stepLabel">Step 1 of 4</div>
+          <div class="progress">
+            <div id="formProgress" class="progress-bar" style="width:25%"></div>
+          </div>
+          <div class="progress-percent" id="progressPercent">25%</div>
+        </div>
+      </div>
+
+      <form id="multiStepForm" novalidate>
+        <div class="form-section">
+          <h5 class="section-title">📋 Personnel Information</h5>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Service Number <span class="text-danger">*</span></label>
+              <input type="text" name="svc_no" class="form-control" required>
+              <div class="service-number-validation service-number-valid" id="airmenServiceNumberValidation">✅ Service number available</div>
+              <div class="service-number-validation service-number-invalid" id="airmenServiceNumberError" style="display:none;">⚠️ This service number is already registered</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Rank <span class="text-danger">*</span></label>
+              <select name="rank" class="form-select" required>
+                <option value="">Select Rank</option>
+                <option>AWO</option><option>MWO</option><option>WO</option><option>FS</option>
+                <option>SGT</option><option>CPL</option><option>LCPL</option><option>ACM</option><option>ACW</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Full Name <span class="text-danger">*</span></label>
+              <input type="text" name="fullname" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Last Unit <span class="text-danger">*</span></label>
+              <input type="text" name="last_unit" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Present Unit <span class="text-danger">*</span></label>
+              <input type="text" name="present_unit" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Marital Status <span class="text-danger">*</span></label>
+              <select name="marital_status" class="form-select" required>
+                <option value="">Select Status</option>
+                <option>Married</option><option>Single</option><option>Widow</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email Address <span class="text-danger">*</span></label>
+              <input type="email" name="email" id="emailField" class="form-control" required>
+              <div class="email-validation" id="emailValidation">✅ Valid email</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+              <input type="tel" name="phone" id="phoneField" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Upload Service ID Card<span class="text-danger">*</span></label>
+              <input type="file" name="svc_id_card" id="fileUpload" class="form-control" accept="image/*,application/pdf">
+            </div>
+          </div>
+          <div class="d-grid mt-4">
+            <button type="button" class="btn btn-navy btn-lg next-btn">Next Step →</button>
+          </div>
+        </div>
+
+        <div class="form-section d-none">
+          <h5 class="section-title">🏠 Accommodation Information</h5>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Block Name <span class="text-danger">*</span></label>
+              <select name="block_name" class="form-select" required>
+                <option value="">Select Block</option>
+                <option>A</option><option>B</option><option>C</option><option>D</option><option>E</option>
+                <option>F</option><option>G</option><option>H</option><option>I</option><option>J</option>
+                <option>K</option><option>L</option><option>M</option><option>N</option><option>O</option>
+                <option>P</option><option>Q</option><option>R</option><option>S</option><option>T</option>
+                <option>U</option><option>V</option><option>W</option><option>X</option><option>Y</option><option>Z</option>
+                <option>STUDIO</option><option>SGT KARATU BLOCK</option><option>Old mammy</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Block Number <span class="text-danger">*</span></label>
+              <select name="block_number" class="form-select" required>
+                <option value="">Select Number</option>
+                <script>for(let i=1;i<=50;i++) document.write(`<option>${i}</option>`);['A','B','C','D','E','F','G'].forEach(l=>document.write(`<option>${l}</option>`));</script>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Flat Number <span class="text-danger">*</span></label>
+              <select name="flat_number" class="form-select" required>
+                <option value="">Select Flat</option>
+                <script>for(let i=1;i<=50;i++) document.write(`<option>${i}</option>`);</script>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Accommodation Type <span class="text-danger">*</span></label>
+              <select name="accommodation_type" class="form-select" required>
+                <option value="">Select Type</option>
+                <option>Full</option><option>Paired</option><option>Transit</option><option>Tied down</option>
+                <option>Two Bedroom</option><option>Three Bedroom</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Block Appointment</label>
+              <input type="text" name="block_appointment" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Upload Authority Letter <span class="text-danger">*</span></label>
+              <input type="file" name="authority_letter" id="authorityLetterUpload" class="form-control" accept="image/*,application/pdf" required>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary prev-btn">← Back</button>
+            <button type="button" class="btn btn-navy next-btn">Next Step →</button>
+          </div>
+        </div>
+
+        <div class="form-section d-none">
+          <h5 class="section-title">
+            👨‍👩‍👧‍👦 Dependants Information
+            <span class="section-subtitle">Optional</span>
+          </h5>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Number of Dependants</label>
+              <select id="dependantsCount" name="dependants_count" class="form-select">
+                <option value="">Select Number</option>
+                <option>One</option><option>Two</option><option>Three</option>
+                <option>Four</option><option>Five</option><option>Six</option><option>Seven</option>
+              </select>
+            </div>
+          </div>
+          <div id="dependantsContainer"></div>
+          <div class="mb-3">
+            <label class="form-label">All Dependant Passport Photography</label>
+            <input type="file" name="dependant_photos" id="airmenDependantPhotos" class="form-control" accept="image/*" multiple>
+            <small class="text-muted">You can select multiple photos</small>
+          </div>
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary prev-btn">← Back</button>
+            <button type="button" class="btn btn-navy next-btn">Next Step →</button>
+          </div>
+        </div>
+
+        <div class="form-section d-none">
+          <h5 class="section-title">🚗 Vehicles & Declaration</h5>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Number of Vehicles <span class="section-subtitle">Optional</span></label>
+              <select id="vehicleCount" name="vehicle_count" class="form-select">
+                <option value="">Select Number</option>
+                <option>One</option><option>Two</option><option>Three</option><option>Four</option><option>Five</option><option>Six</option>
+              </select>
+            </div>
+          </div>
+          <div id="vehiclesContainer"></div>
+          
+          <div class="mb-3">
+            <label class="form-label">Digital Signature (Full Name) <span class="text-danger">*</span></label>
+            <input type="text" name="signature" class="form-control" required>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Declaration Statement</label>
+            <div class="declaration-box">
+              I hereby declare that the information provided above is true and accurate to the best of my knowledge.
+            </div>
+          </div>
+          
+          <div class="alert-box alert-danger" id="duplicateWarning">
+            ⚠️ Duplicate entry detected.
+          </div>
+          
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary prev-btn">← Back</button>
+            <button type="button" class="btn btn-success btn-lg" onclick="simpleSubmit('airmen')">
+              Submit Form <span class="spinner" id="submitSpinner"></span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- OFFICER FORM CONTAINER -->
+<div class="container py-4" id="officerContainer" style="display:none;">
+  <header class="sticky-header text-center">
+    <img src="https://i.imgur.com/74e5Ijv.jpeg" alt="Unit Logo"/>
+    <h1>Sam Enthnan Air Force Base</h1>
+    <h2>Officer Personnel Data Portal</h2>
+  </header>
+
+  <div class="main-card">
+    <div class="card-body">
+      <div class="steps-indicator" id="officerStepsIndicator">
+        <div class="step-item active officer-step-item">
+          <div class="step-circle">1</div>
+          <div class="step-label">Personnel</div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="step-item officer-step-item">
+          <div class="step-circle">2</div>
+          <div class="step-label">Accommodation</div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="step-item officer-step-item">
+          <div class="step-circle">3</div>
+          <div class="step-label">Dependants</div>
+          <div class="step-connector"></div>
+        </div>
+        <div class="step-item officer-step-item">
+          <div class="step-circle">4</div>
+          <div class="step-label">Vehicles</div>
+        </div>
+      </div>
+
+      <div class="progress-container">
+        <div class="progress-wrapper">
+          <div class="step-label-text" id="officerStepLabel">Step 1 of 4</div>
+          <div class="progress">
+            <div id="officerFormProgress" class="progress-bar" style="width:25%"></div>
+          </div>
+          <div class="progress-percent" id="officerProgressPercent">25%</div>
+        </div>
+      </div>
+
+      <form id="officerMultiStepForm" novalidate>
+        <div class="form-section officer-section">
+          <h5 class="section-title">📋 Personnel Information</h5>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Rank <span class="text-danger">*</span></label>
+              <select name="rank" class="form-select" required>
+                <option value="">Select Rank</option>
+                <option>AVM</option>
+                <option>AIR CDRE</option>
+                <option>GP CAPT</option>
+                <option>WG CDR</option>
+                <option>SQN LDR</option>
+                <option>FLT LT</option>
+                <option>FG OFFR</option>
+                <option>PLT OFFR</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Service Number <span class="text-danger">*</span></label>
+              <input type="text" name="svc_no" class="form-control" required>
+              <div class="service-number-validation service-number-valid" id="officerServiceNumberValidation">✅ Service number available</div>
+              <div class="service-number-validation service-number-invalid" id="officerServiceNumberError" style="display:none;">⚠️ This service number is already registered</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Last Unit <span class="text-danger">*</span></label>
+              <input type="text" name="last_unit" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Present Unit <span class="text-danger">*</span></label>
+              <input type="text" name="present_unit" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Marital Status <span class="text-danger">*</span></label>
+              <select name="marital_status" class="form-select" required>
+                <option value="">Select Status</option>
+                <option>Married</option>
+                <option>Single</option>
+                <option>Window</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+              <input type="tel" name="phone" id="officerPhoneField" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Upload Service ID Card <span class="text-danger">*</span></label>
+              <input type="file" name="officer_svc_id_card" id="officerFileUpload" class="form-control" accept="image/*,application/pdf" required>
+            </div>
+          </div>
+          <div class="d-grid mt-4">
+            <button type="button" class="btn btn-navy btn-lg officer-next-btn">Next Step →</button>
+          </div>
+        </div>
+
+        <div class="form-section officer-section d-none">
+          <h5 class="section-title">🏠 Accommodation Information</h5>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Block Name <span class="text-danger">*</span></label>
+              <select name="block_name" class="form-select" required>
+                <option value="">Select Block</option>
+                <option>MOQ1</option>
+                <option>MOQ2</option>
+                <option>MOQ3</option>
+                <option>SOQ BLK A</option>
+                <option>SOQ BLK B</option>
+                <option>WG CDR MAMADI BLK</option>
+                <option>NEWLY CONSTRUCTED BLK A</option>
+                <option>NEWLY CONSTRUCTED BLK B</option>
+                <option>WG CDR ALABOSUN BLK</option>
+                <option>SQN LDR PL GBENEKANU BLK</option>
+                <option>AIR CDRE AKINBAYO BLK</option>
+                <option>SQN LDR ADIZA BLK</option>
+                <option>SHITTU ALAO STREET</option>
+                <option>SMITH ROAD</option>
+                <option>JOHN CHUKWU STREET</option>
+                <option>NEW TERRACE BUILDING</option>
+                <option>COMD'S TIE DOWN</option>
+                <option>PSO TIED DOWN</option>
+                <option>ETUGBAYE</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Accommodation Type <span class="text-danger">*</span></label>
+              <select name="accommodation_type" class="form-select" required>
+                <option value="">Select Type</option>
+                <option>SOQ</option>
+                <option>MOQ</option>
+                <option>TRANSIT</option>
+                <option>TIED DOWN</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Number of Flats <span class="text-danger">*</span></label>
+              <select name="number_of_flats" class="form-select" required>
+                <option value="">Select Number of Flats</option>
+                <option>DUPLEX</option>
+                <option>BUNGALOW</option>
+                <option>FOUR BEDROOM</option>
+                <option>THREE BEDROOM</option>
+                <option>TWO BEDROOM</option>
+                <option>SINGLE ROOM</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Block Number <span class="text-danger">*</span></label>
+              <select name="block_number" class="form-select" required>
+                <option value="">Select Number</option>
+                <script>for(let i=1;i<=12;i++) document.write(`<option>${i}</option>`);</script>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Flat Number <span class="text-danger">*</span></label>
+              <select name="flat_number" class="form-select" required>
+                <option value="">Select Flat</option>
+                <script>for(let i=1;i<=60;i++) document.write(`<option>${i}</option>`);</script>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Date Allocated</label>
+              <input type="date" name="date_allocated" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Allocation Letter</label>
+              <input type="file" name="allocation_letter" class="form-control" accept="image/*,application/pdf">
+            </div>
+          </div>
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary officer-prev-btn">← Back</button>
+            <button type="button" class="btn btn-navy officer-next-btn">Next Step →</button>
+          </div>
+        </div>
+
+        <div class="form-section officer-section d-none">
+          <h5 class="section-title">👨‍👩‍👧‍👦 Dependants Information</h5>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Number of Dependants</label>
+              <select id="officerDependantsCount" name="dependants_count" class="form-select">
+                <option value="">Select Number</option>
+                <option>One</option>
+                <option>Two</option>
+                <option>Three</option>
+                <option>Four</option>
+                <option>Five</option>
+                <option>Six</option>
+                <option>Seven</option>
+                <option>Eight</option>
+              </select>
+            </div>
+          </div>
+          <div id="officerDependantsContainer"></div>
+          <div class="mb-3">
+            <label class="form-label">All Dependant Passport Photography</label>
+            <input type="file" name="dependant_photos" class="form-control" accept="image/*" multiple>
+            <small class="text-muted">You can select multiple photos</small>
+          </div>
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary officer-prev-btn">← Back</button>
+            <button type="button" class="btn btn-navy officer-next-btn">Next Step →</button>
+          </div>
+        </div>
+
+        <div class="form-section officer-section d-none">
+          <h5 class="section-title">🚗 Vehicles Information</h5>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Number of Vehicles</label>
+              <select id="officerVehicleCount" name="vehicle_count" class="form-select">
+                <option value="">Select Number</option>
+                <option>One</option>
+                <option>Two</option>
+                <option>Three</option>
+                <option>Four</option>
+                <option>Five</option>
+                <option>Six</option>
+              </select>
+            </div>
+          </div>
+          <div id="officerVehiclesContainer"></div>
+          
+          <h5 class="section-title mt-4">📝 Declaration</h5>
+          <div class="mb-3">
+            <div class="declaration-box">
+              I hereby declare that all the information contained in this form is in accordance with facts or truths to the best of my knowledge. I take full responsibility for the correctness of the said information. I am aware that this self declaration statement is subject to review and verification and if such information has been falsified I may be prosecuted.
+            </div>
+          </div>
+          
+          <div class="row g-3 mb-3">
+            <div class="col-md-12">
+              <label class="form-label">Do you agree to this declaration? <span class="text-danger">*</span></label>
+              <select name="declaration_agree" class="form-select" required>
+                <option value="">Select Answer</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary officer-prev-btn">← Back</button>
+            <button type="button" class="btn btn-success btn-lg" onclick="simpleSubmit('officer')">
+              Submit Form <span class="spinner" id="officerSubmitSpinner"></span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="autosave-indicator" id="autosaveIndicator">✅ Auto-saved</div>
+
+<div class="success-modal" id="successModal">
+  <div class="success-content">
+    <div class="success-checkmark">
+      <svg viewBox="0 0 100 100">
+        <circle class="checkmark-circle" cx="50" cy="50" r="45"/>
+        <path class="checkmark-check" d="M25,50 L40,65 L75,30"/>
+      </svg>
+    </div>
+    <h3 class="success-title">Submission Successful!</h3>
+    <p class="success-message">Your personnel data has been recorded.</p>
+    
+    <div class="receipt-actions">
+      <button class="btn-download-pdf" onclick="downloadPDF()">📄 Download PDF</button>
+      <button class="btn-print" onclick="printReceipt()">🖨️ Print</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== DYNAMIC FORM GENERATION ====================
+
+// Dependants dynamic form generation
+document.getElementById('dependantsCount')?.addEventListener('change', function(e) {
+    generateDependantFields(e.target.value);
+});
+
+document.getElementById('officerDependantsCount')?.addEventListener('change', function(e) {
+    generateOfficerDependantFields(e.target.value);
+});
+
+// Vehicles dynamic form generation  
+document.getElementById('vehicleCount')?.addEventListener('change', function(e) {
+    generateVehicleFields(e.target.value);
+});
+
+document.getElementById('officerVehicleCount')?.addEventListener('change', function(e) {
+    generateOfficerVehicleFields(e.target.value);
+});
+
+function generateDependantFields(count) {
+    const container = document.getElementById('dependantsContainer');
+    container.innerHTML = '';
+    
+    const numberMap = { 'One': 1, 'Two': 2, 'Three': 3, 'Four': 4, 'Five': 5, 'Six': 6, 'Seven': 7 };
+    const numDependants = numberMap[count] || 0;
+    
+    for (let i = 1; i <= numDependants; i++) {
+        const dependantHtml = `
+            <div class="dynamic-item">
+                <h6>👤 Dependant ${i}</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="dependant_name_${i}" class="form-control" placeholder="Enter full name">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Relationship</label>
+                        <select name="dependant_relationship_${i}" class="form-select">
+                            <option value="">Select Relationship</option>
+                            <option>Spouse</option>
+                            <option>Child</option>
+                            <option>Parent</option>
+                            <option>Sibling</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" name="dependant_dob_${i}" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Gender</label>
+                        <select name="dependant_gender_${i}" class="form-select">
+                            <option value="">Select Gender</option>
+                            <option>Male</option>
+                            <option>Female</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += dependantHtml;
+    }
+}
+
+function generateOfficerDependantFields(count) {
+    const container = document.getElementById('officerDependantsContainer');
+    container.innerHTML = '';
+    
+    const numberMap = { 'One': 1, 'Two': 2, 'Three': 3, 'Four': 4, 'Five': 5, 'Six': 6, 'Seven': 7, 'Eight': 8 };
+    const numDependants = numberMap[count] || 0;
+    
+    for (let i = 1; i <= numDependants; i++) {
+        const dependantHtml = `
+            <div class="dynamic-item">
+                <h6>👤 Dependant ${i}</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="dependant_name_${i}" class="form-control" placeholder="Enter full name">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Relationship</label>
+                        <select name="dependant_relationship_${i}" class="form-select">
+                            <option value="">Select Relationship</option>
+                            <option>Spouse</option>
+                            <option>Child</option>
+                            <option>Parent</option>
+                            <option>Sibling</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Date of Birth</label>
+                        <input type="date" name="dependant_dob_${i}" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Gender</label>
+                        <select name="dependant_gender_${i}" class="form-select">
+                            <option value="">Select Gender</option>
+                            <option>Male</option>
+                            <option>Female</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += dependantHtml;
+    }
+}
+
+function generateVehicleFields(count) {
+    const container = document.getElementById('vehiclesContainer');
+    container.innerHTML = '';
+    
+    const numberMap = { 'One': 1, 'Two': 2, 'Three': 3, 'Four': 4, 'Five': 5, 'Six': 6 };
+    const numVehicles = numberMap[count] || 0;
+    
+    for (let i = 1; i <= numVehicles; i++) {
+        const vehicleHtml = `
+            <div class="dynamic-item">
+                <h6>🚗 Vehicle ${i}</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Vehicle Type</label>
+                        <select name="vehicle_type_${i}" class="form-select">
+                            <option value="">Select Vehicle Type</option>
+                            <option>Car</option>
+                            <option>SUV</option>
+                            <option>Motorcycle</option>
+                            <option>Bus</option>
+                            <option>Truck</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Make/Brand</label>
+                        <input type="text" name="vehicle_make_${i}" class="form-control" placeholder="e.g., Toyota, Honda">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Model</label>
+                        <input type="text" name="vehicle_model_${i}" class="form-control" placeholder="e.g., Camry, Civic">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Year</label>
+                        <input type="number" name="vehicle_year_${i}" class="form-control" placeholder="e.g., 2023" min="1990" max="2030">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Color</label>
+                        <input type="text" name="vehicle_color_${i}" class="form-control" placeholder="e.g., Red, Blue">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">License Plate</label>
+                        <input type="text" name="vehicle_plate_${i}" class="form-control" placeholder="License plate number">
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += vehicleHtml;
+    }
+}
+
+function generateOfficerVehicleFields(count) {
+    const container = document.getElementById('officerVehiclesContainer');
+    container.innerHTML = '';
+    
+    const numberMap = { 'One': 1, 'Two': 2, 'Three': 3, 'Four': 4, 'Five': 5, 'Six': 6 };
+    const numVehicles = numberMap[count] || 0;
+    
+    for (let i = 1; i <= numVehicles; i++) {
+        const vehicleHtml = `
+            <div class="dynamic-item">
+                <h6>🚗 Vehicle ${i}</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Vehicle Type</label>
+                        <select name="vehicle_type_${i}" class="form-select">
+                            <option value="">Select Vehicle Type</option>
+                            <option>Car</option>
+                            <option>SUV</option>
+                            <option>Motorcycle</option>
+                            <option>Bus</option>
+                            <option>Truck</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Make/Brand</label>
+                        <input type="text" name="vehicle_make_${i}" class="form-control" placeholder="e.g., Toyota, Honda">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Model</label>
+                        <input type="text" name="vehicle_model_${i}" class="form-control" placeholder="e.g., Camry, Civic">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Year</label>
+                        <input type="number" name="vehicle_year_${i}" class="form-control" placeholder="e.g., 2023" min="1990" max="2030">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Color</label>
+                        <input type="text" name="vehicle_color_${i}" class="form-control" placeholder="e.g., Red, Blue">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">License Plate</label>
+                        <input type="text" name="vehicle_plate_${i}" class="form-control" placeholder="License plate number">
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += vehicleHtml;
+    }
+}
+
+// Initialize empty containers on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('dependantsContainer').innerHTML = '';
+    document.getElementById('officerDependantsContainer').innerHTML = '';
+    document.getElementById('vehiclesContainer').innerHTML = '';
+    document.getElementById('officerVehiclesContainer').innerHTML = '';
+});
+
+// ==================== ADMIN ACCESS CONTROL ====================
+// Check if admin is logging in via admin.html
+const urlParams = new URLSearchParams(window.location.search);
+const isAdmin = urlParams.get('admin') === 'true';
+
+if (isAdmin) {
+    // Show admin button if coming from admin login
+    document.querySelector('[onclick="showAdminDashboard()"]').style.display = 'block';
+} else {
+    // Hide admin button from regular users
+    document.querySelector('[onclick="showAdminDashboard()"]').style.display = 'none';
+}
+
+// ==================== ADMIN DASHBOARD FUNCTIONS ====================
+
+let allPersonnelData = [];
+let currentFilter = 'all';
+
+function showAdminDashboard() {
+  document.getElementById('adminModal').style.display = 'block';
+  loadAllData();
+}
+
+function closeAdminDashboard() {
+  document.getElementById('adminModal').style.display = 'none';
+}
+
+async function loadAllData() {
+  try {
+    document.getElementById('adminData').innerHTML = '<p style="text-align: center; color: #6b7280; font-size: 1.1rem;">🔄 Loading data from Firebase...</p>';
+    
+    const snapshot = await db.collection('personnel').orderBy('timestamp', 'desc').get();
+    allPersonnelData = [];
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      allPersonnelData.push({
+        id: doc.id,
+        ...data
+      });
+    });
+    
+    updateDashboard();
+    
+  } catch (error) {
+    console.error('Error loading data:', error);
+    document.getElementById('adminData').innerHTML = `<p style="color: red; text-align: center;">Error loading data: ${error.message}</p>`;
+  }
+}
+
+function filterByCadre(cadre) {
+  currentFilter = cadre;
+  updateDashboard();
+}
+
+function updateDashboard() {
+  const filteredData = currentFilter === 'all' 
+    ? allPersonnelData 
+    : allPersonnelData.filter(item => item.cadre === currentFilter);
+  
+  // Update statistics
+  const total = allPersonnelData.length;
+  const airmen = allPersonnelData.filter(item => item.cadre === 'airmen').length;
+  const officers = allPersonnelData.filter(item => item.cadre === 'officer').length;
+  
+  document.getElementById('stats').innerHTML = `
+    <strong style="font-size: 1.2rem;">📊 LIVE STATISTICS:</strong><br>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+      <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; text-align: center;">
+        <div style="font-size: 2rem; font-weight: bold;">${total}</div>
+        <div>Total Records</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; text-align: center;">
+        <div style="font-size: 2rem; font-weight: bold;">${airmen}</div>
+        <div>Airmen</div>
+      </div>
+      <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; text-align: center;">
+        <div style="font-size: 2rem; font-weight: bold;">${officers}</div>
+        <div>Officers</div>
+      </div>
+      ${currentFilter !== 'all' ? `
+      <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; text-align: center;">
+        <div style="font-size: 2rem; font-weight: bold;">${filteredData.length}</div>
+        <div>Filtered</div>
+      </div>
+      ` : ''}
+    </div>
+  `;
+  
+  // Display data
+  if (filteredData.length === 0) {
+    document.getElementById('adminData').innerHTML = '<p style="text-align: center; color: #6b7280; font-size: 1.1rem;">No data found for the selected filter.</p>';
+    return;
+  }
+  
+  let html = `
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+  `;
+  
+  filteredData.forEach((person, index) => {
+    html += `
+      <div style="border: 2px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.3s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid #f3f4f6;">
+          <strong style="color: ${person.cadre === 'airmen' ? '#0066cc' : '#004d99'}; font-size: 1.1rem; background: ${person.cadre === 'airmen' ? '#e6f3ff' : '#e6f0ff'}; padding: 4px 12px; border-radius: 20px;">${person.cadre.toUpperCase()}</strong>
+          <small style="color: #6b7280; font-weight: 600;">${new Date(person.timestamp?.toDate()).toLocaleDateString()}</small>
+        </div>
+        <div style="display: grid; gap: 0.5rem;">
+          <div><strong style="color: var(--navy-dark);">Service No:</strong> <span style="color: #374151; font-weight: 600;">${person.svc_no}</span></div>
+          <div><strong style="color: var(--navy-dark);">Rank:</strong> <span style="color: #374151; font-weight: 600;">${person.rank}</span></div>
+          <div><strong style="color: var(--navy-dark);">Name:</strong> <span style="color: #374151; font-weight: 600;">${person.fullname || person.name}</span></div>
+          <div><strong style="color: var(--navy-dark);">Unit:</strong> <span style="color: #374151; font-weight: 600;">${person.present_unit}</span></div>
+          <div><strong style="color: var(--navy-dark);">Phone:</strong> <span style="color: #374151; font-weight: 600;">${person.phone}</span></div>
+        </div>
+        
+        <!-- FILE DOWNLOAD BUTTONS -->
+        <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
+          <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 0.5rem; font-weight: 600;">Attached Files:</div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            ${person.svc_id_card ? `<button onclick="downloadFile('${person.id}', 'service_id')" style="background: #10b981; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; font-weight: 600;">📷 Service ID</button>` : ''}
+            ${person.authority_letter ? `<button onclick="downloadFile('${person.id}', 'authority_letter')" style="background: #3b82f6; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; font-weight: 600;">📄 Authority Letter</button>` : ''}
+            ${person.allocation_letter ? `<button onclick="downloadFile('${person.id}', 'allocation_letter')" style="background: #8b5cf6; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; font-weight: 600;">📋 Allocation Letter</button>` : ''}
+            ${person.dependant_photos && person.dependant_photos.length > 0 ? `<button onclick="viewDetails('${person.id}')" style="background: #f59e0b; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; font-weight: 600;">🖼️ Dependant Photos (${person.dependant_photos.length})</button>` : ''}
+          </div>
+        </div>
+        
+        <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+          <button onclick="viewDetails('${person.id}')" style="background: var(--navy-dark); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">
+            👁️ View Details
+          </button>
+          <button onclick="deleteRecord('${person.id}')" style="background: var(--danger); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">
+            🗑️ Delete
+          </button>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  document.getElementById('adminData').innerHTML = html;
+}
+
+// ==================== FILE DOWNLOAD FUNCTION ====================
+function downloadFile(personId, fileType) {
+  const person = allPersonnelData.find(p => p.id === personId);
+  if (!person) return;
+  
+  let fileData, fileName;
+  
+  switch(fileType) {
+    case 'service_id':
+      fileData = person.svc_id_card;
+      fileName = person.svc_id_card_name || 'service_id_card';
+      break;
+    case 'authority_letter':
+      fileData = person.authority_letter;
+      fileName = person.authority_letter_name || 'authority_letter';
+      break;
+    case 'allocation_letter':
+      fileData = person.allocation_letter;
+      fileName = person.allocation_letter_name || 'allocation_letter';
+      break;
+    default:
+      alert('File type not supported');
+      return;
+  }
+  
+  if (!fileData) {
+    alert('File not found for this record');
+    return;
+  }
+  
+  // Convert base64 to blob and download
+  const byteCharacters = atob(fileData.split(',')[1]);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  const blob = new Blob([byteArray]);
+  
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
+// ==================== ENHANCED EXPORT TO CSV FUNCTION ====================
+function exportToCSV() {
+  const dataToExport = currentFilter === 'all' 
+    ? allPersonnelData 
+    : allPersonnelData.filter(item => item.cadre === currentFilter);
+  
+  if (dataToExport.length === 0) {
+    alert('No data to export!');
+    return;
+  }
+  
+  // Enhanced field mapping with file references
+  const fieldMapping = {
+    // Basic Info
+    'cadre': 'Cadre',
+    'svc_no': 'Service Number',
+    'rank': 'Rank',
+    'fullname': 'Full Name',
+    'name': 'Name',
+    'last_unit': 'Last Unit',
+    'present_unit': 'Present Unit',
+    'marital_status': 'Marital Status',
+    'email': 'Email',
+    'phone': 'Phone Number',
+    
+    // Accommodation
+    'block_name': 'Block Name',
+    'block_number': 'Block Number',
+    'flat_number': 'Flat Number',
+    'accommodation_type': 'Accommodation Type',
+    'block_appointment': 'Block Appointment',
+    'number_of_flats': 'Number of Flats',
+    'date_allocated': 'Date Allocated',
+    
+    // Dependants and Vehicles
+    'dependants_count': 'Number of Dependants',
+    'vehicle_count': 'Number of Vehicles',
+    
+    // File References
+    'svc_id_card_name': 'Service ID Card File',
+    'authority_letter_name': 'Authority Letter File', 
+    'allocation_letter_name': 'Allocation Letter File',
+    'dependant_photo_names': 'Dependant Photos Files',
+    
+    // Declaration
+    'declaration_agree': 'Agreed to Declaration',
+    'signature': 'Digital Signature',
+    
+    // Metadata
+    'submission_date': 'Submission Date',
+    'timestamp': 'Record Timestamp'
+  };
+  
+  // Get ALL unique field names including file references
+  const allFields = new Set();
+  dataToExport.forEach(person => {
+    Object.keys(person).forEach(key => {
+      if (key !== 'id' && 
+          !key.includes('_card') && 
+          !key.includes('_letter') && 
+          !key.includes('_photos') &&
+          key !== 'svc_id_card' &&
+          key !== 'authority_letter' &&
+          key !== 'allocation_letter' &&
+          key !== 'dependant_photos') {
+        allFields.add(key);
+      }
+    });
+  });
+  
+  // Use field mapping for headers
+  const headers = Array.from(allFields)
+    .sort()
+    .map(field => fieldMapping[field] || field.replace(/_/g, ' ').toUpperCase());
+  
+  const fieldKeys = Array.from(allFields).sort();
+  
+  // Create CSV content
+  let csvContent = headers.join(',') + '\n';
+  
+  dataToExport.forEach(person => {
+    const row = fieldKeys.map(field => {
+      let value = person[field];
+      
+      // Handle different data types
+      if (value === null || value === undefined || value === '') {
+        value = 'N/A';
+      } else if (typeof value === 'object') {
+        // Handle Firestore timestamp
+        if (value.toDate && typeof value.toDate === 'function') {
+          value = new Date(value.toDate()).toLocaleString();
+        } else if (Array.isArray(value)) {
+          // Handle file arrays (like dependant_photo_names)
+          value = value.join('; ');
+        } else {
+          value = 'Object Data';
+        }
+      }
+      
+      // Clean and escape the value for CSV
+      const stringValue = String(value)
+        .replace(/"/g, '""')
+        .replace(/\n/g, ' ')
+        .replace(/\r/g, ' ')
+        .trim();
+      
+      return `"${stringValue}"`;
+    });
+    
+    csvContent += row.join(',') + '\n';
+  });
+  
+  // Create download link
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `personnel_complete_data_${currentFilter}_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+  
+  alert(`✅ Excel file exported successfully!\n\n📊 Contains: ${dataToExport.length} records\n📋 Columns: ${headers.length} fields\n📎 File references included\n💾 File: ${a.download}`);
+}
+
+function viewDetails(id) {
+  const person = allPersonnelData.find(p => p.id === id);
+  if (!person) return;
+  
+  let detailsHtml = `
+    <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 800px; margin: 0 auto; border: 2px solid var(--accent-gold);">
+      <h3 style="color: var(--navy-dark); margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 3px solid var(--navy-dark);">Personnel Details</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+  `;
+  
+  // Add all fields
+  for (const [key, value] of Object.entries(person)) {
+    if (key !== 'id' && value && !key.includes('_card') && !key.includes('_letter') && !key.includes('_photos')) {
+      const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      const displayValue = typeof value === 'object' ? JSON.stringify(value) : value;
+      
+      detailsHtml += `
+        <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--navy-medium);">
+          <strong style="color: var(--navy-dark); display: block; margin-bottom: 0.5rem;">${formattedKey}:</strong>
+          <span style="color: #374151;">${displayValue}</span>
+        </div>
+      `;
+    }
+  }
+  
+  detailsHtml += `
+      </div>
+      <button onclick="closeDetails()" style="background: var(--navy-dark); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; margin-top: 2rem; display: block; margin-left: auto; margin-right: auto;">Close Details</button>
+    </div>
+  `;
+  
+  document.getElementById('adminData').innerHTML = detailsHtml;
+}
+
+function closeDetails() {
+  updateDashboard();
+}
+
+async function deleteRecord(id) {
+  if (!confirm('Are you sure you want to delete this record? This action cannot be undone.')) return;
+  
+  try {
+    await db.collection('personnel').doc(id).delete();
+    alert('Record deleted successfully!');
+    loadAllData(); // Refresh the data
+  } catch (error) {
+    console.error('Error deleting record:', error);
+    alert('Error deleting record: ' + error.message);
+  }
+}
+
+// ==================== OFFICER FORM NAVIGATION ====================
+const officerSections = document.querySelectorAll('#officerMultiStepForm .officer-section');
+const officerStepItems = document.querySelectorAll('#officerContainer .officer-step-item');
+let officerCurrentStep = 0;
+
+function showOfficerStep(index) {
+  officerSections.forEach((s, i) => s.classList.toggle('d-none', i !== index));
+  officerStepItems.forEach((item, i) => {
+    item.classList.remove('active');
+    item.classList.toggle('completed', i < index);
+  });
+  officerStepItems[index].classList.add('active');
+  
+  const pct = Math.round(((index + 1) / 4) * 100);
+  document.getElementById('officerFormProgress').style.width = pct + '%';
+  document.getElementById('officerStepLabel').textContent = `Step ${index + 1} of 4`;
+  document.getElementById('officerProgressPercent').textContent = pct + '%';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Add event listeners to officer navigation buttons
+document.querySelectorAll('#officerMultiStepForm .officer-next-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (officerCurrentStep < 3) {
+      officerCurrentStep++;
+      showOfficerStep(officerCurrentStep);
+    }
+  });
+});
+
+document.querySelectorAll('#officerMultiStepForm .officer-prev-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (officerCurrentStep > 0) {
+      officerCurrentStep--;
+      showOfficerStep(officerCurrentStep);
+    }
+  });
+});
+
+// Initialize officer form
+showOfficerStep(0);
+
+// ==================== FIREBASE CONFIGURATION ====================
+const firebaseConfig = {
+  apiKey: "AIzaSyAen1S8QnoBdvYj2-zal3Jn8Qzx63dEtJ0",
+  authDomain: "sam-enthnan-personnel.firebaseapp.com",
+  projectId: "sam-enthnan-personnel",
+  storageBucket: "sam-enthnan-personnel.firebasestorage.app",
+  messagingSenderId: "81575702061",
+  appId: "1:81575702061:web:e3fb4969db7e7b9c8852a4"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ==================== FIREBASE FUNCTIONS ====================
+async function checkDuplicateServiceNumber(serviceNumber, cadre) {
+  try {
+    const snapshot = await db.collection('personnel')
+      .where('svc_no', '==', serviceNumber)
+      .where('cadre', '==', cadre)
+      .limit(1)
+      .get();
+    
+    return !snapshot.empty;
+  } catch (error) {
+    console.error('Duplicate check error:', error);
+    return false;
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function submitToFirestore(formData, cadre) {
+  try {
+    // Check duplicate
+    const isDuplicate = await checkDuplicateServiceNumber(formData.svc_no, cadre);
+    if (isDuplicate) {
+      throw new Error('Service number already exists for this cadre');
+    }
+
+    // Prepare data for Firestore - NO FILE OBJECTS, only strings and arrays
+    const personnelData = {
+      // Basic Info
+      svc_no: formData.svc_no || '',
+      rank: formData.rank || '',
+      fullname: formData.fullname || '',
+      name: formData.name || '',
+      last_unit: formData.last_unit || '',
+      present_unit: formData.present_unit || '',
+      marital_status: formData.marital_status || '',
+      email: formData.email || '',
+      phone: formData.phone || '',
+      
+      // Accommodation
+      block_name: formData.block_name || '',
+      block_number: formData.block_number || '',
+      flat_number: formData.flat_number || '',
+      accommodation_type: formData.accommodation_type || '',
+      block_appointment: formData.block_appointment || '',
+      number_of_flats: formData.number_of_flats || '',
+      date_allocated: formData.date_allocated || '',
+      
+      // Dependants and Vehicles
+      dependants_count: formData.dependants_count || '',
+      vehicle_count: formData.vehicle_count || '',
+      
+      // Declaration
+      declaration_agree: formData.declaration_agree || '',
+      signature: formData.signature || '',
+      
+      // File data (already converted to base64 strings)
+      svc_id_card: formData.svc_id_card || '',
+      svc_id_card_name: formData.svc_id_card_name || '',
+      authority_letter: formData.authority_letter || '',
+      authority_letter_name: formData.authority_letter_name || '',
+      allocation_letter: formData.allocation_letter || '',
+      allocation_letter_name: formData.allocation_letter_name || '',
+      dependant_photos: formData.dependant_photos || [],
+      dependant_photo_names: formData.dependant_photo_names || [],
+      
+      // Metadata
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      cadre: cadre,
+      submission_date: new Date().toISOString()
+    };
+
+    // Add dynamic dependants and vehicles data
+    for (const [key, value] of Object.entries(formData)) {
+      if ((key.startsWith('dependant_') || key.startsWith('vehicle_')) && value) {
+        personnelData[key] = value;
+      }
+    }
+
+    console.log("Final data being saved:", personnelData);
+    
+    // Save to Firestore
+    await db.collection('personnel').add(personnelData);
+    
+    return { success: true, message: 'Data saved successfully to Firebase!' };
+    
+  } catch (error) {
+    console.error('Submission error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ==================== SIMPLE SUBMIT FUNCTION ====================
+async function simpleSubmit(cadre) {
+  console.log("Starting submission for:", cadre);
+  
+  const form = cadre === 'airmen' ? document.getElementById('multiStepForm') : document.getElementById('officerMultiStepForm');
+  const spinner = cadre === 'airmen' ? document.getElementById('submitSpinner') : document.getElementById('officerSubmitSpinner');
+  
+  // Show loading
+  spinner.style.display = 'inline-block';
+  
+  try {
+    // Create a clean data object (NOT using FormData)
+    const data = {};
+    
+    // Get all regular form fields manually (excluding files)
+    const formElements = form.elements;
+    for (let element of formElements) {
+      if (element.name && element.type !== 'file') {
+        if (element.type === 'checkbox' || element.type === 'radio') {
+          if (element.checked) {
+            data[element.name] = element.value;
+          }
+        } else {
+          data[element.name] = element.value;
+        }
+      }
+    }
+    
+    // Handle file uploads separately and convert to base64
+    if (cadre === 'airmen') {
+      // Service ID Card
+      const fileInput = document.getElementById('fileUpload');
+      if (fileInput.files.length > 0) {
+        const base64 = await fileToBase64(fileInput.files[0]);
+        data.svc_id_card = base64;
+        data.svc_id_card_name = fileInput.files[0].name;
+      }
+      
+      // Authority Letter
+      const authorityLetterInput = document.getElementById('authorityLetterUpload');
+      if (authorityLetterInput.files.length > 0) {
+        const base64 = await fileToBase64(authorityLetterInput.files[0]);
+        data.authority_letter = base64;
+        data.authority_letter_name = authorityLetterInput.files[0].name;
+      }
+      
+      // Dependant Photos
+      const airmenDepPhotosInput = document.getElementById('airmenDependantPhotos');
+      if (airmenDepPhotosInput && airmenDepPhotosInput.files.length > 0) {
+        data.dependant_photos = [];
+        data.dependant_photo_names = [];
+        
+        for (let i = 0; i < airmenDepPhotosInput.files.length; i++) {
+          const file = airmenDepPhotosInput.files[i];
+          const base64 = await fileToBase64(file);
+          data.dependant_photos.push(base64);
+          data.dependant_photo_names.push(file.name);
+        }
+      }
+    } else {
+      // Officer Service ID Card
+      const officerFileInput = document.getElementById('officerFileUpload');
+      if (officerFileInput && officerFileInput.files.length > 0) {
+        const base64 = await fileToBase64(officerFileInput.files[0]);
+        data.svc_id_card = base64;
+        data.svc_id_card_name = officerFileInput.files[0].name;
+      }
+      
+      // Officer Allocation Letter
+      const allocationFile = document.querySelector('#officerMultiStepForm input[name="allocation_letter"]');
+      if (allocationFile && allocationFile.files.length > 0) {
+        const base64 = await fileToBase64(allocationFile.files[0]);
+        data.allocation_letter = base64;
+        data.allocation_letter_name = allocationFile.files[0].name;
+      }
+      
+      // Officer Dependant Photos
+      const photoFile = document.querySelector('#officerMultiStepForm input[name="dependant_photos"]');
+      if (photoFile && photoFile.files.length > 0) {
+        data.dependant_photos = [];
+        data.dependant_photo_names = [];
+        
+        for (let i = 0; i < photoFile.files.length; i++) {
+          const file = photoFile.files[i];
+          const base64 = await fileToBase64(file);
+          data.dependant_photos.push(base64);
+          data.dependant_photo_names.push(file.name);
+        }
+      }
+    }
+    
+    console.log("Submitting clean data:", data);
+    
+    // Submit to Firestore
+    const result = await submitToFirestore(data, cadre);
+    
+    if (result.success) {
+      spinner.style.display = 'none';
+      document.getElementById('successModal').style.display = 'flex';
+      submittedFormData = data;
+    } else {
+      throw new Error(result.error);
+    }
+    
+  } catch (error) {
+    console.error('Submission error:', error);
+    spinner.style.display = 'none';
+    alert('Submission failed: ' + error.message);
+  }
+}
+
+// ==================== AIRMEN FORM NAVIGATION ====================
+const form = document.getElementById('multiStepForm');
+const sections = document.querySelectorAll('#multiStepForm .form-section');
+const stepItems = document.querySelectorAll('#mainContainer .step-item');
+let currentStep = 0;
+let submittedFormData = null;
+let selectedCadre = null;
+
+// Navigation functions
+function showCadreSelection() {
+  document.getElementById('welcomeScreen').style.display = 'none';
+  document.getElementById('cadreSelectionScreen').style.display = 'flex';
+}
+
+function backToWelcome() {
+  document.getElementById('cadreSelectionScreen').style.display = 'none';
+  document.getElementById('welcomeScreen').style.display = 'flex';
+}
+
+function selectCadre(cadre) {
+  selectedCadre = cadre;
+  
+  if (cadre === 'airmen') {
+    document.getElementById('cadreSelectionScreen').style.display = 'none';
+    document.getElementById('mainContainer').style.display = 'block';
+  } else if (cadre === 'officer') {
+    document.getElementById('cadreSelectionScreen').style.display = 'none';
+    document.getElementById('officerContainer').style.display = 'block';
+  }
+}
+
+// Form navigation functions
+function showStep(index) {
+  sections.forEach((s, i) => s.classList.toggle('d-none', i !== index));
+  stepItems.forEach((item, i) => {
+    item.classList.remove('active');
+    item.classList.toggle('completed', i < index);
+  });
+  stepItems[index].classList.add('active');
+  
+  const pct = Math.round(((index + 1) / 4) * 100);
+  document.getElementById('formProgress').style.width = pct + '%';
+  document.getElementById('stepLabel').textContent = `Step ${index + 1} of 4`;
+  document.getElementById('progressPercent').textContent = pct + '%';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.querySelectorAll('#multiStepForm .next-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (currentStep < 3) {
+      currentStep++;
+      showStep(currentStep);
+    }
+  });
+});
+
+document.querySelectorAll('#multiStepForm .prev-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (currentStep > 0) {
+      currentStep--;
+      showStep(currentStep);
+    }
+  });
+});
+
+// Initialize
+showStep(0);
+
+// ==================== SUCCESS MODAL FUNCTIONS ====================
+function downloadPDF() {
+  alert('PDF download functionality would be implemented here');
+}
+
+function printReceipt() {
+  alert('Print functionality would be implemented here');
+}
+</script>
+</body>
+</html>
