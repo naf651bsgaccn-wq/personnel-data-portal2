@@ -2776,8 +2776,235 @@ document.addEventListener('DOMContentLoaded', function() {
   setVH();
   window.addEventListener('resize', setVH);
 });
+  // ==================== FILE SIZE VALIDATION ====================
+function validateFileSize(file, maxSizeMB = 2) {
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  if (file.size > maxSizeBytes) {
+    throw new Error(`File too large: ${file.name} (${(file.size/1024/1024).toFixed(2)}MB). Maximum allowed: ${maxSizeMB}MB`);
+  }
+  return true;
+}
+
+// ==================== IMAGE COMPRESSION ====================
+function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert to compressed base64
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedBase64);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ==================== UPDATE FILE INPUTS WITH VALIDATION ====================
+document.addEventListener('DOMContentLoaded', function() {
+  const fileInputs = document.querySelectorAll('input[type="file"]');
+  fileInputs.forEach(input => {
+    input.addEventListener('change', function() {
+      Array.from(this.files).forEach(file => {
+        const fileSizeMB = file.size / 1024 / 1024;
+        if (fileSizeMB > 2) {
+          alert(`⚠️ Large file detected: ${file.name} (${fileSizeMB.toFixed(2)}MB)\n\nFor better performance, please:\n• Use images under 2MB\n• Compress photos before uploading\n• Use lower resolution if possible`);
+        }
+      });
+    });
+  });
+});
+
+// ==================== UPDATED SUBMIT FUNCTION WITH COMPRESSION ====================
+async function simpleSubmit(cadre) {
+  console.log("Starting submission for:", cadre);
+  
+  const form = cadre === 'airmen' ? document.getElementById('multiStepForm') : document.getElementById('officerMultiStepForm');
+  const spinner = cadre === 'airmen' ? document.getElementById('submitSpinner') : document.getElementById('officerSubmitSpinner');
+  
+  // Show loading
+  spinner.style.display = 'inline-block';
+  
+  try {
+    // Create a clean data object
+    const data = {};
+    
+    // Get all regular form fields manually (excluding files)
+    const formElements = form.elements;
+    for (let element of formElements) {
+      if (element.name && element.type !== 'file') {
+        if (element.type === 'checkbox' || element.type === 'radio') {
+          if (element.checked) {
+            data[element.name] = element.value;
+          }
+        } else {
+          data[element.name] = element.value;
+        }
+      }
+    }
+    
+    // Handle file uploads with compression and validation
+    if (cadre === 'airmen') {
+      // Service ID Card
+      const fileInput = document.getElementById('fileUpload');
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        validateFileSize(file, 5); // 5MB max for important documents
+        
+        if (file.type.startsWith('image/')) {
+          const base64 = await compressImage(file, 1000, 1000, 0.8); // Higher quality for ID cards
+          data.svc_id_card = base64;
+        } else {
+          // For PDFs, use original but validate size
+          const base64 = await fileToBase64(file);
+          data.svc_id_card = base64;
+        }
+        data.svc_id_card_name = file.name;
+      }
+      
+      // Authority Letter
+      const authorityLetterInput = document.getElementById('authorityLetterUpload');
+      if (authorityLetterInput.files.length > 0) {
+        const file = authorityLetterInput.files[0];
+        validateFileSize(file, 5); // 5MB max
+        
+        if (file.type.startsWith('image/')) {
+          const base64 = await compressImage(file, 1000, 1000, 0.8);
+          data.authority_letter = base64;
+        } else {
+          const base64 = await fileToBase64(file);
+          data.authority_letter = base64;
+        }
+        data.authority_letter_name = file.name;
+      }
+      
+      // Dependant Photos - Compress all images
+      const airmenDepPhotosInput = document.getElementById('airmenDependantPhotos');
+      if (airmenDepPhotosInput && airmenDepPhotosInput.files.length > 0) {
+        data.dependant_photos = [];
+        data.dependant_photo_names = [];
+        
+        for (let i = 0; i < airmenDepPhotosInput.files.length; i++) {
+          const file = airmenDepPhotosInput.files[i];
+          validateFileSize(file, 3); // 3MB max for photos
+          
+          if (file.type.startsWith('image/')) {
+            const base64 = await compressImage(file, 600, 600, 0.6); // More compression for multiple photos
+            data.dependant_photos.push(base64);
+          } else {
+            const base64 = await fileToBase64(file);
+            data.dependant_photos.push(base64);
+          }
+          data.dependant_photo_names.push(file.name);
+        }
+      }
+    } else {
+      // Officer file compression (similar logic)
+      const officerFileInput = document.getElementById('officerFileUpload');
+      if (officerFileInput && officerFileInput.files.length > 0) {
+        const file = officerFileInput.files[0];
+        validateFileSize(file, 5); // 5MB max
+        
+        if (file.type.startsWith('image/')) {
+          const base64 = await compressImage(file, 1000, 1000, 0.8);
+          data.svc_id_card = base64;
+        } else {
+          const base64 = await fileToBase64(file);
+          data.svc_id_card = base64;
+        }
+        data.svc_id_card_name = file.name;
+      }
+      
+      // Officer Allocation Letter
+      const allocationFile = document.querySelector('#officerMultiStepForm input[name="allocation_letter"]');
+      if (allocationFile && allocationFile.files.length > 0) {
+        const file = allocationFile.files[0];
+        validateFileSize(file, 5); // 5MB max
+        
+        if (file.type.startsWith('image/')) {
+          const base64 = await compressImage(file, 1000, 1000, 0.8);
+          data.allocation_letter = base64;
+        } else {
+          const base64 = await fileToBase64(file);
+          data.allocation_letter = base64;
+        }
+        data.allocation_letter_name = file.name;
+      }
+      
+      // Officer Dependant Photos
+      const photoFile = document.querySelector('#officerMultiStepForm input[name="dependant_photos"]');
+      if (photoFile && photoFile.files.length > 0) {
+        data.dependant_photos = [];
+        data.dependant_photo_names = [];
+        
+        for (let i = 0; i < photoFile.files.length; i++) {
+          const file = photoFile.files[i];
+          validateFileSize(file, 3); // 3MB max for photos
+          
+          if (file.type.startsWith('image/')) {
+            const base64 = await compressImage(file, 600, 600, 0.6);
+            data.dependant_photos.push(base64);
+          } else {
+            const base64 = await fileToBase64(file);
+            data.dependant_photos.push(base64);
+          }
+          data.dependant_photo_names.push(file.name);
+        }
+      }
+    }
+    
+    console.log("Submitting compressed and validated data");
+    
+    // Submit to Firestore
+    const result = await submitToFirestore(data, cadre);
+    
+    if (result.success) {
+      spinner.style.display = 'none';
+      document.getElementById('successModal').style.display = 'flex';
+      submittedFormData = data;
+    } else {
+      throw new Error(result.error);
+    }
+    
+  } catch (error) {
+    console.error('Submission error:', error);
+    spinner.style.display = 'none';
+    
+    if (error.message.includes('File too large')) {
+      alert('📁 File Upload Error:\n\n' + error.message + '\n\nPlease choose smaller files or compress your images.');
+    } else {
+      alert('Submission failed: ' + error.message);
+    }
+  }
+}
 </script>
 </body>
 
 </html>
+
 
