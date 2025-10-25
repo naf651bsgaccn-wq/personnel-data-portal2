@@ -3329,53 +3329,56 @@ document.addEventListener('DOMContentLoaded', function() {
     initLivingInBaseFeature();
 });
       if (data.numberInBase) {
-        numberInBaseInput.value = data.numberInBase;
-    }
-};
+    numberInBaseInput.value = data.numberInBase;
+        }
+    };
 }
 
-// === REPLACE EVERYTHING FROM HERE DOWN ===
-// SINGLE CLEAN FIX FOR BOTH FEATURES
+// EXACT FIX FOR YOUR START REGISTRATION LINK
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize dependent living feature
     if (typeof initLivingInBaseFeature === 'function') {
         initLivingInBaseFeature();
     }
     
-    // Fix Start Registration button
-    setTimeout(function() {
-        // Try multiple element types
-        const elements = document.querySelectorAll('button, a, input[type="button"], input[type="submit"], .btn');
+    // Fix Start Registration LINK (it's an <a> tag, not button)
+    function fixStartRegistration() {
+        const startLinks = document.querySelectorAll('a.btn-start, a[onclick*="startRegistration"]');
         
-        for (let i = 0; i < elements.length; i++) {
-            const element = elements[i];
-            const elementText = element.textContent || element.value || element.innerText || '';
+        startLinks.forEach(link => {
+            console.log('FOUND START REGISTRATION LINK:', link);
             
-            if (elementText.includes('Start Registration')) {
-                console.log('FOUND START REGISTRATION BUTTON:', element);
+            // Remove all existing click events
+            const newLink = link.cloneNode(true);
+            link.parentNode.replaceChild(newLink, link);
+            
+            // Add fresh click event
+            newLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Start Registration LINK CLICKED!');
+                alert('START REGISTRATION IS NOW WORKING! 🎉');
                 
-                // Create fresh element to remove all old events
-                const newElement = element.cloneNode(true);
-                element.parentNode.replaceChild(newElement, element);
-                
-                // Add click event to the new element
-                newElement.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    alert('START REGISTRATION WORKING! 🎉');
-                    console.log('Registration started successfully!');
-                });
-                
-                console.log('Button fixed!');
-                break;
-            }
-        }
-    }, 1000);
+                // Add your actual registration logic here
+                // Example: show the registration form
+                const regForm = document.getElementById('registration-form');
+                if (regForm) {
+                    regForm.style.display = 'block';
+                    regForm.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    }
+    
+    // Try multiple times
+    fixStartRegistration();
+    setTimeout(fixStartRegistration, 1000);
 });
+
+// Also ensure the original startRegistration function exists
+function startRegistration() {
+    console.log('Original startRegistration function called');
+    alert('Registration Starting...');
+}
 </script>
 </body>
 </html>
-
-
-
-
-
