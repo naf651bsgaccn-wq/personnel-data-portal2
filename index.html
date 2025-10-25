@@ -3266,35 +3266,73 @@ async function simpleSubmit(cadre) {
       alert('Submission failed: ' + error.message);
     }
   }
-  /* ... all your existing CSS code ... */
+ // Dynamic Living in Base Functionality
+function initLivingInBaseFeature() {
+    const livingYes = document.getElementById('livingYes');
+    const livingNo = document.getElementById('livingNo');
+    const numberInBaseGroup = document.getElementById('numberInBaseGroup');
+    const numberInBaseInput = document.getElementById('numberInBase');
 
-/* Existing last lines of your CSS might look like: */
-.some-existing-class {
-    color: blue;
+    // Event listeners for radio buttons
+    if (livingYes && livingNo) {
+        livingYes.addEventListener('change', function() {
+            if (this.checked) {
+                numberInBaseGroup.style.display = 'block';
+                numberInBaseInput.focus();
+            }
+        });
+
+        livingNo.addEventListener('change', function() {
+            if (this.checked) {
+                numberInBaseGroup.style.display = 'none';
+                numberInBaseInput.value = '';
+            }
+        });
+    }
+
+    // Reset function to clear the fields
+    window.resetLivingInBase = function() {
+        livingYes.checked = false;
+        livingNo.checked = false;
+        numberInBaseGroup.style.display = 'none';
+        numberInBaseInput.value = '';
+    };
+
+    // Save data function
+    window.saveLivingInBaseData = function() {
+        const livingInBase = livingYes.checked ? 'yes' : (livingNo.checked ? 'no' : '');
+        const numberInBase = numberInBaseInput.value;
+        
+        return {
+            livingInBase: livingInBase,
+            numberInBase: numberInBase
+        };
+    };
+
+    // Load data function
+    window.loadLivingInBaseData = function(data) {
+        if (data.livingInBase === 'yes') {
+            livingYes.checked = true;
+            numberInBaseGroup.style.display = 'block';
+        } else if (data.livingInBase === 'no') {
+            livingNo.checked = true;
+        }
+        
+        if (data.numberInBase) {
+            numberInBaseInput.value = data.numberInBase;
+        }
+    };
 }
 
-/* === ADD THE NEW CSS RIGHT HERE === */
-/* Living in Base Section Styles */
-#livingInBaseSection {
-    margin: 20px 0;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border-left: 4px solid #007bff;
-}
-
-.radio-group {
-    display: flex;
-    gap: 20px;
-    margin-top: 8px;
-}
-
-/* ... rest of the new CSS ... */
-}
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initLivingInBaseFeature();
+});
 </script>
 </body>
 
 </html>
+
 
 
 
