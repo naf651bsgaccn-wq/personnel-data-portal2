@@ -3328,51 +3328,52 @@ function initLivingInBaseFeature() {
 document.addEventListener('DOMContentLoaded', function() {
     initLivingInBaseFeature();
 });
-  // EMERGENCY BUTTON FIX - ADD THIS
-function fixRegistrationButton() {
-    const buttons = document.querySelectorAll('button, input[type="button"], .btn');
-    
-    buttons.forEach(button => {
-        const btnText = button.textContent || button.value || '';
-        
-        if (btnText.toLowerCase().includes('start registration')) {
-            console.log("Fixing button:", button);
-            
-            // Remove all existing events and add new one
-            const newButton = button.cloneNode(true);
-            button.parentNode.replaceChild(newButton, button);
-            
-            // Add click event to new button
-            newButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                console.log("Start Registration clicked!");
-                alert("Registration is starting now! 🚀");
-                
-                // Add your actual registration start logic here
-                // Example: show registration form or next section
-                const regForm = document.getElementById('registration-form');
-                if (regForm) {
-                    regForm.style.display = 'block';
-                    regForm.scrollIntoView({ behavior: 'smooth' });
-                }
-            });
-            
-            console.log("Button fixed successfully!");
-        }
-    });
+      if (data.numberInBase) {
+        numberInBaseInput.value = data.numberInBase;
+    }
+};
 }
 
-// Try multiple times in case of loading issues
-document.addEventListener('DOMContentLoaded', fixRegistrationButton);
-setTimeout(fixRegistrationButton, 1000);
-setTimeout(fixRegistrationButton, 3000);
-
-console.log("Button fix script loaded - waiting to fix Start Registration button");
+// === REPLACE EVERYTHING FROM HERE DOWN ===
+// SINGLE CLEAN FIX FOR BOTH FEATURES
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize dependent living feature
+    if (typeof initLivingInBaseFeature === 'function') {
+        initLivingInBaseFeature();
+    }
+    
+    // Fix Start Registration button
+    setTimeout(function() {
+        // Try multiple element types
+        const elements = document.querySelectorAll('button, a, input[type="button"], input[type="submit"], .btn');
+        
+        for (let i = 0; i < elements.length; i++) {
+            const element = elements[i];
+            const elementText = element.textContent || element.value || element.innerText || '';
+            
+            if (elementText.includes('Start Registration')) {
+                console.log('FOUND START REGISTRATION BUTTON:', element);
+                
+                // Create fresh element to remove all old events
+                const newElement = element.cloneNode(true);
+                element.parentNode.replaceChild(newElement, element);
+                
+                // Add click event to the new element
+                newElement.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    alert('START REGISTRATION WORKING! 🎉');
+                    console.log('Registration started successfully!');
+                });
+                
+                console.log('Button fixed!');
+                break;
+            }
+        }
+    }, 1000);
+});
 </script>
 </body>
-
 </html>
-
 
 
 
