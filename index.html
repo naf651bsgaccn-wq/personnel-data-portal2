@@ -3328,10 +3328,51 @@ function initLivingInBaseFeature() {
 document.addEventListener('DOMContentLoaded', function() {
     initLivingInBaseFeature();
 });
+  // EMERGENCY BUTTON FIX - ADD THIS
+function fixRegistrationButton() {
+    const buttons = document.querySelectorAll('button, input[type="button"], .btn');
+    
+    buttons.forEach(button => {
+        const btnText = button.textContent || button.value || '';
+        
+        if (btnText.toLowerCase().includes('start registration')) {
+            console.log("Fixing button:", button);
+            
+            // Remove all existing events and add new one
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+            
+            // Add click event to new button
+            newButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log("Start Registration clicked!");
+                alert("Registration is starting now! 🚀");
+                
+                // Add your actual registration start logic here
+                // Example: show registration form or next section
+                const regForm = document.getElementById('registration-form');
+                if (regForm) {
+                    regForm.style.display = 'block';
+                    regForm.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+            
+            console.log("Button fixed successfully!");
+        }
+    });
+}
+
+// Try multiple times in case of loading issues
+document.addEventListener('DOMContentLoaded', fixRegistrationButton);
+setTimeout(fixRegistrationButton, 1000);
+setTimeout(fixRegistrationButton, 3000);
+
+console.log("Button fix script loaded - waiting to fix Start Registration button");
 </script>
 </body>
 
 </html>
+
 
 
 
